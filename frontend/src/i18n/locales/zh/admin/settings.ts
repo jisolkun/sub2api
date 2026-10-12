@@ -15,10 +15,11 @@ export default {
       },
       features: {
         overloadNonStream: {
-          invalidThreshold: '触发次数必须是 1 到 1000 的整数',
+          invalidThreshold: '触发次数必须是 0 到 1000 的整数',
           title: '过载后强制非流式',
           enabled: '启用过载自动切换',
-          threshold: '每个账号触发次数（1–1000，默认 1）',
+          threshold: '每个账号触发次数（0–1000，默认 1）',
+          zeroHint: '当前阈值为 0：所有 OpenAI 账号的流式请求都会直接改走非流式上游（明确要求流式的账号除外），无需等待过载。',
           description: 'OpenAI 账号累计遇到 Our servers are currently overloaded. Please try again later 达到阈值后，上游改用非流式请求，客户端仍收到流式响应。内容需等待上游完成后发送。若上游明确要求流式（如 Codex），会自动恢复流式并标记不支持非流式。关闭总开关会暂停规则；点击账号查询旁的“关闭非流”可解除该账号并清零计数。',
         },
         excelBpsImages: {

@@ -583,11 +583,8 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyOpenAICodexClientVersion] = NormalizeCodexClientVersion(settings.OpenAICodexClientVersion)
 	updates[SettingKeyOpenAICodexVersionAutoSyncEnabled] = strconv.FormatBool(settings.OpenAICodexVersionAutoSyncEnabled)
 	updates[SettingKeyOpenAIRequestTimezoneEnabled] = strconv.FormatBool(settings.OpenAIRequestTimezoneEnabled)
-	if settings.OpenAIOverloadNonStreamThreshold == 0 {
-		settings.OpenAIOverloadNonStreamThreshold = 1
-	}
-	if settings.OpenAIOverloadNonStreamThreshold < 1 || settings.OpenAIOverloadNonStreamThreshold > 1000 {
-		return nil, fmt.Errorf("overload non-stream threshold must be between 1 and 1000")
+	if settings.OpenAIOverloadNonStreamThreshold < 0 || settings.OpenAIOverloadNonStreamThreshold > 1000 {
+		return nil, fmt.Errorf("overload non-stream threshold must be between 0 and 1000")
 	}
 	updates[SettingKeyOpenAIOverloadNonStreamEnabled] = strconv.FormatBool(settings.OpenAIOverloadNonStreamEnabled)
 	updates[SettingKeyOpenAIOverloadNonStreamThreshold] = strconv.Itoa(settings.OpenAIOverloadNonStreamThreshold)

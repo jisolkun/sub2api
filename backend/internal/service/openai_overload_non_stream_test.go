@@ -95,6 +95,25 @@ func TestOpenAIOverloadSettingsMissingThresholdUsesOne(t *testing.T) {
 	require.Equal(t, 1, got.Threshold)
 }
 
+func TestOpenAIOverloadZeroThresholdForcesAllAccounts(t *testing.T) {
+	for _, tc := range []struct {
+		enabled      bool
+		threshold    string
+		extra        map[string]any
+		expectForced bool
+	}{
+		{enabled: true, threshold: "0", expectForced: true},
+		{enabled: true, threshold: "0", extra: map[string]any{OpenAIOverloadCountExtraKey: 7}, expectForced: true},
+		{enabled: true, threshold: "0", extra: map[string]any{OpenAINonStreamUnsupportedExtraKey: true}, expectForced: false},
+		{enabled: false, threshold: "0", expectForced: false},
+		{enabled: true, threshold: "1", extra: map[string]any{OpenAIOverloadCountExtraKey: 7}, expectForced: false},
+	} {
+		s := &OpenAIGatewayService{settingService: overloadTestSettings(tc.enabled, tc.threshold)}
+		a := &Account{ID: 1, Platform: PlatformOpenAI, Extra: tc.extra}
+		require.Equal(t, tc.expectForced, s.forceOpenAINonStream(context.Background(), a), "enabled=%v threshold=%s extra=%v", tc.enabled, tc.threshold, tc.extra)
+	}
+}
+
 func TestOpenAIOverloadObserverCountsErrorPairOnceAcrossReadBoundaries(t *testing.T) {
 	stream := "data: {\"type\":\"error\",\"error\":{\"message\":\"" + overloadTestMessage + "\"}}\n\n" +
 		"data: {\"type\":\"response.failed\",\"response\":{\"error\":{\"message\":\"" + overloadTestMessage + "\"}}}\n\n"

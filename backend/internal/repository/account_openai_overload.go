@@ -11,7 +11,7 @@ import (
 // IncrementOpenAIOverloadCount serializes against other increments and manual
 // resets on the account row. The flag and counter survive process restarts.
 func (r *accountRepository) IncrementOpenAIOverloadCount(ctx context.Context, id int64, threshold int) error {
-	if threshold < 1 || threshold > 1000 {
+	if threshold < 0 || threshold > 1000 {
 		return fmt.Errorf("invalid overload threshold")
 	}
 	tx, err := r.client.Tx(ctx)

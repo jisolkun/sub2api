@@ -7218,15 +7218,24 @@
         <!-- Tab: Features (功能开关) -->
         <div v-show="activeTab === 'features'" class="space-y-6">
           <div class="card" data-testid="openai-overload-non-stream-settings">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('admin.settings.features.overloadNonStream.title') }}</h2>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.overloadNonStream.description') }}</p>
-            <div class="mt-4 flex items-center justify-between gap-4">
-              <label class="input-label">{{ t('admin.settings.features.overloadNonStream.enabled') }}</label>
-              <Toggle v-model="form.openai_overload_non_stream_enabled" />
+            <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+              <h2 id="settings-section-features-overload-non-stream" tabindex="-1" class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ t('admin.settings.features.overloadNonStream.title') }}
+              </h2>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.overloadNonStream.description') }}</p>
             </div>
-            <div class="mt-4">
-              <label for="openai-overload-threshold" class="input-label">{{ t('admin.settings.features.overloadNonStream.threshold') }}</label>
-              <input id="openai-overload-threshold" v-model.number="form.openai_overload_non_stream_threshold" type="number" min="1" max="1000" step="1" class="input" />
+            <div class="space-y-5 p-6">
+              <div class="flex items-center justify-between gap-4">
+                <label for="openai-overload-enabled" class="input-label">{{ t('admin.settings.features.overloadNonStream.enabled') }}</label>
+                <Toggle id="openai-overload-enabled" v-model="form.openai_overload_non_stream_enabled" />
+              </div>
+              <div>
+                <label for="openai-overload-threshold" class="input-label">{{ t('admin.settings.features.overloadNonStream.threshold') }}</label>
+                <input id="openai-overload-threshold" v-model.number="form.openai_overload_non_stream_threshold" type="number" min="0" max="1000" step="1" class="input" />
+                <p v-if="form.openai_overload_non_stream_enabled && form.openai_overload_non_stream_threshold === 0" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.features.overloadNonStream.zeroHint') }}
+                </p>
+              </div>
             </div>
           </div>
         <div class="card" data-testid="protocol-feature-switches">
@@ -11712,7 +11721,7 @@ const siteBillingModeHint = computed(() =>
 );
 
 async function saveSettings() {
-  if (!Number.isInteger(form.openai_overload_non_stream_threshold) || form.openai_overload_non_stream_threshold < 1 || form.openai_overload_non_stream_threshold > 1000) {
+  if (!Number.isInteger(form.openai_overload_non_stream_threshold) || form.openai_overload_non_stream_threshold < 0 || form.openai_overload_non_stream_threshold > 1000) {
     appStore.showError(t('admin.settings.features.overloadNonStream.invalidThreshold'));
     return;
   }

@@ -547,8 +547,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		response.BadRequest(c, "Invalid request: "+err.Error())
 		return
 	}
-	if req.OpenAIOverloadNonStreamThreshold != nil && (*req.OpenAIOverloadNonStreamThreshold < 1 || *req.OpenAIOverloadNonStreamThreshold > 1000) {
-		response.BadRequest(c, "overload non-stream threshold must be between 1 and 1000")
+	if req.OpenAIOverloadNonStreamThreshold != nil && (*req.OpenAIOverloadNonStreamThreshold < 0 || *req.OpenAIOverloadNonStreamThreshold > 1000) {
+		response.BadRequest(c, "overload non-stream threshold must be between 0 and 1000")
 		return
 	}
 	if req.OpenAICodexTicketHarvestScope != nil && req.OpenAICodexTicketHarvestScope.Mode == "" {

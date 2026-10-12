@@ -35,7 +35,7 @@ type openAIOverloadNonStreamSettings struct {
 
 func parseOpenAIOverloadNonStreamSettings(values map[string]string) openAIOverloadNonStreamSettings {
 	n, err := strconv.Atoi(values[SettingKeyOpenAIOverloadNonStreamThreshold])
-	if err != nil || n < 1 || n > 1000 {
+	if err != nil || n < 0 || n > 1000 {
 		n = 1
 	}
 	return openAIOverloadNonStreamSettings{Enabled: values[SettingKeyOpenAIOverloadNonStreamEnabled] == "true", Threshold: n}
@@ -78,9 +78,20 @@ func (s *OpenAIGatewayService) forceOpenAINonStream(ctx context.Context, account
 	if s == nil || account == nil || account.Platform != PlatformOpenAI {
 		return false
 	}
+	settings := s.settingService.GetOpenAIOverloadNonStreamSettings(ctx)
+	if !settings.Enabled {
+		return false
+	}
+	// A threshold of 0 forces every account onto the non-streaming upstream
+	// without waiting for overload errors; accounts whose upstream explicitly
+	// rejects non-streaming keep their regular streaming path.
+	if settings.Threshold == 0 {
+		unsupported, _ := account.Extra[OpenAINonStreamUnsupportedExtraKey].(bool)
+		return !unsupported
+	}
 	active, _ := account.Extra[OpenAIForceNonStreamExtraKey].(bool)
 	unsupported, _ := account.Extra[OpenAINonStreamUnsupportedExtraKey].(bool)
-	return active && !unsupported && s.settingService.GetOpenAIOverloadNonStreamSettings(ctx).Enabled
+	return active && !unsupported
 }
 
 // Counting is a single database update, shared across concurrent requests and instances.

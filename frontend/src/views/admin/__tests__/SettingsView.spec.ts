@@ -771,12 +771,22 @@ describe("admin SettingsView payment visible method controls", () => {
   it("rejects an empty or fractional overload threshold before saving", async () => {
     const wrapper = mountView();
     await flushPromises();
-    for (const value of ['', '1.5', '0', '1001']) {
+    for (const value of ['', '1.5', '-1', '1001']) {
       await wrapper.get('#openai-overload-threshold').setValue(value);
       await wrapper.get('form').trigger('submit.prevent');
       await flushPromises();
       expect(updateSettings).not.toHaveBeenCalled();
     }
+  });
+
+  it("saves a zero overload threshold to force non-streaming everywhere", async () => {
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.get('#openai-overload-threshold').setValue('0');
+    await wrapper.get('form').trigger('submit.prevent');
+    await flushPromises();
+    expect(updateSettings).toHaveBeenCalled();
+    expect(updateSettings.mock.calls.at(-1)?.[0]).toMatchObject({ openai_overload_non_stream_threshold: 0 });
   });
 
   it("opens the risk settings from a deep link after loading without changing switches", async () => {

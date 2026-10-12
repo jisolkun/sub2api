@@ -540,6 +540,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&billingType,
 		&requestTypeRaw,
 		&stream,
+		&forcedNonStream,
 		&openaiWSMode,
 		&durationMs,
 		&firstTokenMs,
@@ -569,7 +570,6 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&upstreamRequestID,
 		&sessionID,
 		&nativeCompactionV2,
-		&forcedNonStream,
 		&createdAt,
 	); err != nil {
 		return nil, err

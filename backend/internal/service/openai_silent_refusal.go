@@ -20,7 +20,12 @@ const (
 )
 
 type openAIChatSilentRefusalDetector struct {
-	enabled         bool
+	enabled bool
+	// holdPreContent 在静默拒答检测之外独立生效：扣留仅有 bookkeeping 内容的
+	// chunk（如 response.created 映射出的 role chunk），直到出现真实内容信号。
+	// 这样上游在内容开始前返回的过载等瞬时错误事件仍能触发账号 failover，
+	// 而不是在已经向客户端写出字节后只能原样转发错误。
+	holdPreContent  bool
 	sawContent      bool
 	sawToolCall     bool
 	sawFunctionCall bool
@@ -37,12 +42,27 @@ func newOpenAIChatSilentRefusalDetector(requestBodyLen int) *openAIChatSilentRef
 	}
 }
 
+// withPreContentHold 让检测器同时承担预内容缓冲职责：所有请求的 bookkeeping
+// chunk 都先扣留，等真实内容（文本/推理/工具/用量）出现后再一并下发。
+func (d *openAIChatSilentRefusalDetector) withPreContentHold() *openAIChatSilentRefusalDetector {
+	if d != nil {
+		d.holdPreContent = true
+	}
+	return d
+}
+
+// observeActive 报告观察方法是否需要记录信号：静默拒答检测只对大请求启用，
+// 但预内容缓冲对所有请求都需要信号来判断释放时机。
+func (d *openAIChatSilentRefusalDetector) observeActive() bool {
+	return d != nil && (d.enabled || d.holdPreContent)
+}
+
 func (d *openAIChatSilentRefusalDetector) Enabled() bool {
 	return d != nil && d.enabled
 }
 
 func (d *openAIChatSilentRefusalDetector) ObserveSSELine(line string) {
-	if d == nil || !d.enabled {
+	if !d.observeActive() {
 		return
 	}
 	if eventType, ok := extractOpenAISSEEventLine(line); ok {
@@ -55,7 +75,7 @@ func (d *openAIChatSilentRefusalDetector) ObserveSSELine(line string) {
 }
 
 func (d *openAIChatSilentRefusalDetector) ObservePayload(payload []byte) {
-	if d == nil || !d.enabled {
+	if !d.observeActive() {
 		return
 	}
 	payload = bytes.TrimSpace(payload)
@@ -84,7 +104,7 @@ func (d *openAIChatSilentRefusalDetector) ObservePayload(payload []byte) {
 }
 
 func (d *openAIChatSilentRefusalDetector) ObserveChatChunk(chunk apicompat.ChatCompletionsChunk) {
-	if d == nil || !d.enabled {
+	if !d.observeActive() {
 		return
 	}
 	if chunk.Usage != nil {
@@ -108,13 +128,22 @@ func (d *openAIChatSilentRefusalDetector) ObserveChatChunk(chunk apicompat.ChatC
 }
 
 func (d *openAIChatSilentRefusalDetector) ShouldReleaseClientOutput() bool {
-	if d == nil || !d.enabled {
+	if d == nil {
 		return true
 	}
 	if d.sawContent || d.sawToolCall || d.sawFunctionCall || d.sawUsage || d.sawError || d.sawReasoning {
 		return true
 	}
-	return d.sawFinish && d.finishReason != "" && d.finishReason != "stop"
+	if !d.enabled && !d.holdPreContent {
+		return true
+	}
+	if d.sawFinish && d.finishReason != "" && d.finishReason != "stop" {
+		return true
+	}
+	// 预内容缓冲：尚无任何内容信号时扣留 bookkeeping chunk（role chunk 等），
+	// 维持上游 failover 窗口；流结束时的兜底 flush 保证扣留内容最终下发。
+	// 静默拒答检测开启时同样在此扣留，保证空流（finish=stop 且无内容）能被识别。
+	return false
 }
 
 func (d *openAIChatSilentRefusalDetector) IsSilentRefusal() bool {

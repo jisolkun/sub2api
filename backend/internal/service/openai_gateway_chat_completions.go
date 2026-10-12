@@ -697,7 +697,7 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 	clientDisconnected := false
 	clientOutputStarted := false
 	pendingSSE := make([]string, 0, 4)
-	refusalDetector := newOpenAIChatSilentRefusalDetector(requestBodyLen)
+	refusalDetector := newOpenAIChatSilentRefusalDetector(requestBodyLen).withPreContentHold()
 	var streamFailoverErr *UpstreamFailoverError
 	var streamNonFailoverErr error
 	terminalEventType := ""
@@ -1146,7 +1146,9 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 			if clientDisconnected {
 				continue
 			}
-			if refusalDetector.Enabled() && !clientOutputStarted {
+			// 预内容缓冲期间不写 keepalive 注释字节：一旦向客户端写出任何字节，
+			// handler 侧的 failover 窗口即关闭，上游早期错误（如过载）就只能原样转发。
+			if !clientOutputStarted && !refusalDetector.ShouldReleaseClientOutput() {
 				continue
 			}
 			if time.Since(lastDataAt) < keepaliveInterval {

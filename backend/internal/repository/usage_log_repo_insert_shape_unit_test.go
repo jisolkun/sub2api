@@ -5,7 +5,9 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -129,7 +131,9 @@ func TestPrepareUsageLogInsert_UpstreamRequestIDArgWiring(t *testing.T) {
 	})
 	require.Len(t, prepared.args, len(usageLogInsertArgTypes))
 
-	idx := len(prepared.args) - 4
+	// 末尾顺序：upstream_request_id, session_id, native_compaction_v2,
+	// forced_non_stream, created_at。
+	idx := len(prepared.args) - 5
 	arg, ok := prepared.args[idx].(sql.NullString)
 	require.True(t, ok, "upstream_request_id arg should be sql.NullString, got %T", prepared.args[idx])
 	require.True(t, arg.Valid)
@@ -142,4 +146,75 @@ func TestPrepareUsageLogInsert_UpstreamRequestIDArgWiring(t *testing.T) {
 	require.False(t, nullArg.Valid, "absent upstream request id must be NULL")
 
 	require.Contains(t, usageLogSelectColumns, "upstream_request_id")
+}
+
+// usageLogScanFixtureValue 为 usageLogSelectColumns 的每个列给出与 scanUsageLog
+// 目的地类型相容的驱动值；可空列统一给 nil。
+func usageLogScanFixtureValue(column string) driver.Value {
+	switch column {
+	case "id", "user_id", "api_key_id", "account_id", "group_id", "subscription_id", "channel_id",
+		"input_tokens", "output_tokens", "cache_creation_tokens", "cache_read_tokens",
+		"cache_creation_5m_tokens", "cache_creation_1h_tokens", "image_output_tokens",
+		"image_input_tokens", "image_count", "video_count", "billing_type", "request_type",
+		"duration_ms", "first_token_ms", "video_duration_seconds":
+		return int64(1)
+	case "image_output_cost", "image_input_cost", "input_cost", "output_cost",
+		"cache_creation_cost", "cache_read_cost", "total_cost", "actual_cost", "rate_multiplier":
+		return float64(1)
+	case "stream", "forced_non_stream", "openai_ws_mode", "native_compaction_v2",
+		"cache_ttl_overridden", "long_context_billing_applied":
+		return true
+	case "model":
+		return "gpt-6-luna"
+	case "created_at":
+		return time.Date(2026, 10, 12, 12, 0, 0, 0, time.UTC)
+	default:
+		return nil
+	}
+}
+
+// TestUsageLogSelectColumns_ScanAlignment 钉住 usageLogSelectColumns 与 scanUsageLog
+// 目的地清单的对齐关系。回归背景：forced_non_stream 曾被插进 SELECT 但 scan 顺序
+// 没同步，整张使用记录列表在 openai_ws_mode 上报 bool→int64 扫描错误。
+func TestUsageLogSelectColumns_ScanAlignment(t *testing.T) {
+	columns := strings.Split(usageLogSelectColumns, ", ")
+	// SELECT 比 INSERT 多一列首列 id（库端生成），其余 63 列与参数类型表一一对应。
+	require.Len(t, columns, len(usageLogInsertArgTypes)+1,
+		"SELECT column count must be insert arg-types plus the id column")
+
+	idx := func(name string) int {
+		pos := slices.Index(columns, name)
+		require.GreaterOrEqual(t, pos, 0, "column %q missing from usageLogSelectColumns", name)
+		return pos
+	}
+	// scanUsageLog 的读取顺序：stream, forced_non_stream, openai_ws_mode, ...
+	require.Less(t, idx("stream"), idx("forced_non_stream"),
+		"forced_non_stream must sit right after stream, matching scanUsageLog")
+	require.Less(t, idx("forced_non_stream"), idx("openai_ws_mode"),
+		"openai_ws_mode must come after forced_non_stream, matching scanUsageLog")
+	require.Equal(t, len(columns)-2, idx("native_compaction_v2"))
+	require.Equal(t, len(columns)-1, idx("created_at"))
+
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = db.Close() })
+
+	values := make([]driver.Value, 0, len(columns))
+	for _, column := range columns {
+		values = append(values, usageLogScanFixtureValue(column))
+	}
+	mock.ExpectQuery("SELECT").WillReturnRows(
+		sqlmock.NewRows(columns).AddRow(values...),
+	)
+
+	rows, err := db.Query("SELECT "+usageLogSelectColumns+" FROM usage_logs WHERE id = $1", 1)
+	require.NoError(t, err)
+	defer rows.Close()
+	require.True(t, rows.Next())
+	log, err := scanUsageLog(rows)
+	require.NoError(t, err, "scanUsageLog destinations must match usageLogSelectColumns positionally")
+	require.NotNil(t, log)
+	require.Equal(t, "gpt-6-luna", log.Model)
+	require.True(t, log.ForcedNonStream)
+	require.NoError(t, rows.Err())
 }

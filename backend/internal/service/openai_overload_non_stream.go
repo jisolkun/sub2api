@@ -263,7 +263,11 @@ func (s *OpenAIGatewayService) prepareOpenAIForcedNonStreamRequest(request *http
 	if err != nil {
 		return nil, false, err
 	}
-	markOpenAIForcedNonStream(request.Context())
+	// 仅当客户端确实要求流式时才打标：客户端本就非流式的请求只是被统一改写，
+	// 不属于「流式(非流)」展示语义，否则使用记录会把非流式请求误标。
+	if wantsSSE {
+		markOpenAIForcedNonStream(request.Context())
+	}
 	clone := request.Clone(request.Context())
 	clone = clone.WithContext(context.WithValue(clone.Context(), openAIForcedNonStreamRequestKey{}, true))
 	clone.Body = io.NopCloser(bytes.NewReader(body))

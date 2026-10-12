@@ -658,6 +658,20 @@ func (_u *UsageLogUpdate) SetNillableStream(v *bool) *UsageLogUpdate {
 	return _u
 }
 
+// SetForcedNonStream sets the "forced_non_stream" field.
+func (_u *UsageLogUpdate) SetForcedNonStream(v bool) *UsageLogUpdate {
+	_u.mutation.SetForcedNonStream(v)
+	return _u
+}
+
+// SetNillableForcedNonStream sets the "forced_non_stream" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableForcedNonStream(v *bool) *UsageLogUpdate {
+	if v != nil {
+		_u.SetForcedNonStream(*v)
+	}
+	return _u
+}
+
 // SetDurationMs sets the "duration_ms" field.
 func (_u *UsageLogUpdate) SetDurationMs(v int) *UsageLogUpdate {
 	_u.mutation.ResetDurationMs()
@@ -1290,6 +1304,9 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Stream(); ok {
 		_spec.SetField(usagelog.FieldStream, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ForcedNonStream(); ok {
+		_spec.SetField(usagelog.FieldForcedNonStream, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.DurationMs(); ok {
 		_spec.SetField(usagelog.FieldDurationMs, field.TypeInt, value)
@@ -2172,6 +2189,20 @@ func (_u *UsageLogUpdateOne) SetNillableStream(v *bool) *UsageLogUpdateOne {
 	return _u
 }
 
+// SetForcedNonStream sets the "forced_non_stream" field.
+func (_u *UsageLogUpdateOne) SetForcedNonStream(v bool) *UsageLogUpdateOne {
+	_u.mutation.SetForcedNonStream(v)
+	return _u
+}
+
+// SetNillableForcedNonStream sets the "forced_non_stream" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableForcedNonStream(v *bool) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetForcedNonStream(*v)
+	}
+	return _u
+}
+
 // SetDurationMs sets the "duration_ms" field.
 func (_u *UsageLogUpdateOne) SetDurationMs(v int) *UsageLogUpdateOne {
 	_u.mutation.ResetDurationMs()
@@ -2834,6 +2865,9 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if value, ok := _u.mutation.Stream(); ok {
 		_spec.SetField(usagelog.FieldStream, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ForcedNonStream(); ok {
+		_spec.SetField(usagelog.FieldForcedNonStream, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.DurationMs(); ok {
 		_spec.SetField(usagelog.FieldDurationMs, field.TypeInt, value)

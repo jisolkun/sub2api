@@ -325,6 +325,7 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 					ChannelUsageFields: clientRequestedUsageFields(c, channelMapping, reqModel, res.UpstreamModel),
 					PricingAt:          pricingAt,
 					CyberBlocked:       cyberBlocked,
+					ForcedNonStream:    service.GetOpenAIForcedNonStream(c),
 				}); err != nil {
 					logger.L().With(
 						zap.String("component", "handler.openai_gateway.chat_completions"),

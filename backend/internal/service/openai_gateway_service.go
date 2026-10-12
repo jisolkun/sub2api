@@ -275,7 +275,10 @@ type OpenAIForwardResult struct {
 	// Empty/nil means it should fall back to ReasoningEffort at persistence.
 	RequestedReasoningEffort *string
 	Stream                   bool
-	OpenAIWSMode             bool
+	// ForcedNonStream 记录该请求的上游请求被「过载后强制非流式」规则改写为
+	// stream=false（客户端协议保持流式）。用于使用记录展示「流式(非流)」。
+	ForcedNonStream bool
+	OpenAIWSMode    bool
 	// UpstreamTerminalEvent is the normalized terminal event observed on an
 	// upstream Responses WebSocket turn. Empty preserves legacy/non-WS success.
 	UpstreamTerminalEvent string

@@ -441,6 +441,8 @@ export default {
     stream: 'Stream',
     sync: 'Sync',
     nativeCompactionV2: 'Compaction',
+    forcedNonStream: 'Stream(forced non-stream)',
+    forcedNonStreamHint: 'Client protocol stays streaming while the upstream request was rewritten to non-streaming (stream=false) by the forced non-stream rule',
     compactionFilter: 'Request Kind',
     allCompactionTypes: 'All Requests',
     compactionOnly: 'Compaction Only',

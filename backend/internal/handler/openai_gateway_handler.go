@@ -1145,6 +1145,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 					PricingAt:          pricingAt,
 					CyberBlocked:       cyberBlocked,
 					NativeCompactionV2: nativeV2,
+					ForcedNonStream:    service.GetOpenAIForcedNonStream(c),
 				}); err != nil {
 					logger.L().With(
 						zap.String("component", "handler.openai_gateway.responses"),
@@ -1758,6 +1759,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 					ChannelUsageFields: clientRequestedUsageFields(c, channelMappingMsg, reqModel, res.UpstreamModel),
 					PricingAt:          pricingAt,
 					CyberBlocked:       cyberBlocked,
+					ForcedNonStream:    service.GetOpenAIForcedNonStream(c),
 				}); err != nil {
 					logger.L().With(
 						zap.String("component", "handler.openai_gateway.messages"),
@@ -3641,6 +3643,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 						ChannelUsageFields: turnUsageFields,
 						PricingAt:          turnRecordPricingAt,
 						CyberBlocked:       cyberBlocked,
+						ForcedNonStream:    service.GetOpenAIForcedNonStream(c),
 					}); err != nil {
 						reqLog.Error("openai.websocket_record_usage_failed",
 							zap.Int64("account_id", account.ID),

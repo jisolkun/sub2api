@@ -126,6 +126,10 @@ func (UsageLog) Fields() []ent.Field {
 			Default(0),
 		field.Bool("stream").
 			Default(false),
+		// ForcedNonStream 标记该请求的上游 body 被「过载后强制非流式」规则改写为
+		// stream=false（客户端协议保持流式），用于使用记录展示「流式(非流)」。
+		field.Bool("forced_non_stream").
+			Default(false),
 		field.Int("duration_ms").
 			Optional().
 			Nillable(),

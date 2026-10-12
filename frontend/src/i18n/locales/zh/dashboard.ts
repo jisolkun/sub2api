@@ -446,6 +446,8 @@ export default {
     stream: '流式',
     sync: '同步',
     nativeCompactionV2: '压缩',
+    forcedNonStream: '流式(非流)',
+    forcedNonStreamHint: '客户端协议保持流式，上游请求已按「过载后强制非流式」规则改写为非流式（stream=false）',
     compactionFilter: '请求类别',
     allCompactionTypes: '全部请求',
     compactionOnly: '仅原生压缩',

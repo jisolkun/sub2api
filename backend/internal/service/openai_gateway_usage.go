@@ -43,6 +43,9 @@ type OpenAIRecordUsageInput struct {
 	// Responses handler from stream=true + compaction_trigger. It never stores
 	// the request payload and does not replace the transport request type.
 	NativeCompactionV2 bool
+	// ForcedNonStream 为 true 表示该请求的上游 body 被「过载后强制非流式」规则
+	// 改写为 stream=false（客户端协议保持流式）。用于使用记录展示「流式(非流)」。
+	ForcedNonStream bool
 	ChannelUsageFields
 }
 
@@ -421,6 +424,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		ImageSizeSource:          optionalTrimmedStringPtr(result.ImageSizeSource),
 		ImageSizeBreakdown:       imageSizeBreakdown,
 		NativeCompactionV2:       input.NativeCompactionV2,
+		ForcedNonStream:          input.ForcedNonStream,
 	}
 	isVideoUsage := isGrokVideoUsageResult(result, billingModels)
 	if isVideoUsage {

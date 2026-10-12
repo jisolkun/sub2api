@@ -671,6 +671,10 @@ type UsageLog struct {
 	// Cache TTL Override 标记
 	CacheTTLOverridden bool `json:"cache_ttl_overridden"`
 
+	// ForcedNonStream 标记该请求的上游 body 被「过载后强制非流式」规则改写为
+	// stream=false（客户端协议保持流式），前端据此显示「流式(非流)」。
+	ForcedNonStream bool `json:"forced_non_stream"`
+
 	// BillingMode 计费模式：token/image
 	BillingMode *string `json:"billing_mode,omitempty"`
 

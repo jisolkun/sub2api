@@ -131,6 +131,14 @@
               {{ getRequestTypeLabel(row) }}
             </span>
             <span
+              v-if="row.forced_non_stream"
+              data-testid="forced-non-stream-badge"
+              class="inline-flex items-center rounded bg-fuchsia-100 px-2 py-0.5 text-xs font-medium text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-200"
+              :title="t('usage.forcedNonStreamHint')"
+            >
+              {{ t('usage.forcedNonStream') }}
+            </span>
+            <span
               v-if="row.native_compaction_v2"
               data-testid="native-compaction-badge"
               class="inline-flex items-center rounded bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-800 dark:bg-teal-900 dark:text-teal-200"

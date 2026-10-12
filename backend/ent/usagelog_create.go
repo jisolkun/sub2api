@@ -435,6 +435,20 @@ func (_c *UsageLogCreate) SetNillableStream(v *bool) *UsageLogCreate {
 	return _c
 }
 
+// SetForcedNonStream sets the "forced_non_stream" field.
+func (_c *UsageLogCreate) SetForcedNonStream(v bool) *UsageLogCreate {
+	_c.mutation.SetForcedNonStream(v)
+	return _c
+}
+
+// SetNillableForcedNonStream sets the "forced_non_stream" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableForcedNonStream(v *bool) *UsageLogCreate {
+	if v != nil {
+		_c.SetForcedNonStream(*v)
+	}
+	return _c
+}
+
 // SetDurationMs sets the "duration_ms" field.
 func (_c *UsageLogCreate) SetDurationMs(v int) *UsageLogCreate {
 	_c.mutation.SetDurationMs(v)
@@ -761,6 +775,10 @@ func (_c *UsageLogCreate) defaults() {
 		v := usagelog.DefaultStream
 		_c.mutation.SetStream(v)
 	}
+	if _, ok := _c.mutation.ForcedNonStream(); !ok {
+		v := usagelog.DefaultForcedNonStream
+		_c.mutation.SetForcedNonStream(v)
+	}
 	if _, ok := _c.mutation.ImageCount(); !ok {
 		v := usagelog.DefaultImageCount
 		_c.mutation.SetImageCount(v)
@@ -883,6 +901,9 @@ func (_c *UsageLogCreate) check() error {
 	}
 	if _, ok := _c.mutation.Stream(); !ok {
 		return &ValidationError{Name: "stream", err: errors.New(`ent: missing required field "UsageLog.stream"`)}
+	}
+	if _, ok := _c.mutation.ForcedNonStream(); !ok {
+		return &ValidationError{Name: "forced_non_stream", err: errors.New(`ent: missing required field "UsageLog.forced_non_stream"`)}
 	}
 	if v, ok := _c.mutation.UserAgent(); ok {
 		if err := usagelog.UserAgentValidator(v); err != nil {
@@ -1074,6 +1095,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Stream(); ok {
 		_spec.SetField(usagelog.FieldStream, field.TypeBool, value)
 		_node.Stream = value
+	}
+	if value, ok := _c.mutation.ForcedNonStream(); ok {
+		_spec.SetField(usagelog.FieldForcedNonStream, field.TypeBool, value)
+		_node.ForcedNonStream = value
 	}
 	if value, ok := _c.mutation.DurationMs(); ok {
 		_spec.SetField(usagelog.FieldDurationMs, field.TypeInt, value)
@@ -1815,6 +1840,18 @@ func (u *UsageLogUpsert) SetStream(v bool) *UsageLogUpsert {
 // UpdateStream sets the "stream" field to the value that was provided on create.
 func (u *UsageLogUpsert) UpdateStream() *UsageLogUpsert {
 	u.SetExcluded(usagelog.FieldStream)
+	return u
+}
+
+// SetForcedNonStream sets the "forced_non_stream" field.
+func (u *UsageLogUpsert) SetForcedNonStream(v bool) *UsageLogUpsert {
+	u.Set(usagelog.FieldForcedNonStream, v)
+	return u
+}
+
+// UpdateForcedNonStream sets the "forced_non_stream" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateForcedNonStream() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldForcedNonStream)
 	return u
 }
 
@@ -2761,6 +2798,20 @@ func (u *UsageLogUpsertOne) SetStream(v bool) *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) UpdateStream() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.UpdateStream()
+	})
+}
+
+// SetForcedNonStream sets the "forced_non_stream" field.
+func (u *UsageLogUpsertOne) SetForcedNonStream(v bool) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetForcedNonStream(v)
+	})
+}
+
+// UpdateForcedNonStream sets the "forced_non_stream" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateForcedNonStream() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateForcedNonStream()
 	})
 }
 
@@ -3917,6 +3968,20 @@ func (u *UsageLogUpsertBulk) SetStream(v bool) *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) UpdateStream() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.UpdateStream()
+	})
+}
+
+// SetForcedNonStream sets the "forced_non_stream" field.
+func (u *UsageLogUpsertBulk) SetForcedNonStream(v bool) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetForcedNonStream(v)
+	})
+}
+
+// UpdateForcedNonStream sets the "forced_non_stream" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateForcedNonStream() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateForcedNonStream()
 	})
 }
 

@@ -1929,6 +1929,8 @@ export interface UsageLog {
 
   request_type?: UsageRequestType
   stream: boolean
+  // 上游请求被「过载后强制非流式」规则改写为 stream=false（客户端协议保持流式）
+  forced_non_stream?: boolean
   openai_ws_mode?: boolean
   native_compaction_v2: boolean
   duration_ms: number | null

@@ -215,6 +215,11 @@ func Stream(v bool) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldStream, v))
 }
 
+// ForcedNonStream applies equality check predicate on the "forced_non_stream" field. It's identical to ForcedNonStreamEQ.
+func ForcedNonStream(v bool) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldForcedNonStream, v))
+}
+
 // DurationMs applies equality check predicate on the "duration_ms" field. It's identical to DurationMsEQ.
 func DurationMs(v int) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldDurationMs, v))
@@ -1683,6 +1688,16 @@ func StreamEQ(v bool) predicate.UsageLog {
 // StreamNEQ applies the NEQ predicate on the "stream" field.
 func StreamNEQ(v bool) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNEQ(FieldStream, v))
+}
+
+// ForcedNonStreamEQ applies the EQ predicate on the "forced_non_stream" field.
+func ForcedNonStreamEQ(v bool) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldForcedNonStream, v))
+}
+
+// ForcedNonStreamNEQ applies the NEQ predicate on the "forced_non_stream" field.
+func ForcedNonStreamNEQ(v bool) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldForcedNonStream, v))
 }
 
 // DurationMsEQ applies the EQ predicate on the "duration_ms" field.

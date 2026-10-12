@@ -45089,6 +45089,7 @@ type UsageLogMutation struct {
 	billing_type                 *int8
 	addbilling_type              *int8
 	stream                       *bool
+	forced_non_stream            *bool
 	duration_ms                  *int
 	addduration_ms               *int
 	first_token_ms               *int
@@ -46840,6 +46841,42 @@ func (m *UsageLogMutation) ResetStream() {
 	m.stream = nil
 }
 
+// SetForcedNonStream sets the "forced_non_stream" field.
+func (m *UsageLogMutation) SetForcedNonStream(b bool) {
+	m.forced_non_stream = &b
+}
+
+// ForcedNonStream returns the value of the "forced_non_stream" field in the mutation.
+func (m *UsageLogMutation) ForcedNonStream() (r bool, exists bool) {
+	v := m.forced_non_stream
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldForcedNonStream returns the old "forced_non_stream" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldForcedNonStream(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldForcedNonStream is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldForcedNonStream requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldForcedNonStream: %w", err)
+	}
+	return oldValue.ForcedNonStream, nil
+}
+
+// ResetForcedNonStream resets all changes to the "forced_non_stream" field.
+func (m *UsageLogMutation) ResetForcedNonStream() {
+	m.forced_non_stream = nil
+}
+
 // SetDurationMs sets the "duration_ms" field.
 func (m *UsageLogMutation) SetDurationMs(i int) {
 	m.duration_ms = &i
@@ -47795,7 +47832,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 47)
+	fields := make([]string, 0, 48)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -47891,6 +47928,9 @@ func (m *UsageLogMutation) Fields() []string {
 	}
 	if m.stream != nil {
 		fields = append(fields, usagelog.FieldStream)
+	}
+	if m.forced_non_stream != nil {
+		fields = append(fields, usagelog.FieldForcedNonStream)
 	}
 	if m.duration_ms != nil {
 		fields = append(fields, usagelog.FieldDurationMs)
@@ -48009,6 +48049,8 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.BillingType()
 	case usagelog.FieldStream:
 		return m.Stream()
+	case usagelog.FieldForcedNonStream:
+		return m.ForcedNonStream()
 	case usagelog.FieldDurationMs:
 		return m.DurationMs()
 	case usagelog.FieldFirstTokenMs:
@@ -48112,6 +48154,8 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldBillingType(ctx)
 	case usagelog.FieldStream:
 		return m.OldStream(ctx)
+	case usagelog.FieldForcedNonStream:
+		return m.OldForcedNonStream(ctx)
 	case usagelog.FieldDurationMs:
 		return m.OldDurationMs(ctx)
 	case usagelog.FieldFirstTokenMs:
@@ -48374,6 +48418,13 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStream(v)
+		return nil
+	case usagelog.FieldForcedNonStream:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetForcedNonStream(v)
 		return nil
 	case usagelog.FieldDurationMs:
 		v, ok := value.(int)
@@ -49014,6 +49065,9 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldStream:
 		m.ResetStream()
+		return nil
+	case usagelog.FieldForcedNonStream:
+		m.ResetForcedNonStream()
 		return nil
 	case usagelog.FieldDurationMs:
 		m.ResetDurationMs()

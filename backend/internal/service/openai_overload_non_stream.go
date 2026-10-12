@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 )
@@ -83,15 +84,72 @@ func (s *OpenAIGatewayService) forceOpenAINonStream(ctx context.Context, account
 		return false
 	}
 	// A threshold of 0 forces every account onto the non-streaming upstream
-	// without waiting for overload errors; accounts whose upstream explicitly
-	// rejects non-streaming keep their regular streaming path.
+	// without waiting for overload errors. Accounts previously marked
+	// "non-stream unsupported" are still forced: the operator asked for an
+	// all-non-stream upstream and unsupported upstreams transparently fall
+	// back to streaming after the explicit protocol rejection.
 	if settings.Threshold == 0 {
-		unsupported, _ := account.Extra[OpenAINonStreamUnsupportedExtraKey].(bool)
-		return !unsupported
+		return true
 	}
 	active, _ := account.Extra[OpenAIForceNonStreamExtraKey].(bool)
 	unsupported, _ := account.Extra[OpenAINonStreamUnsupportedExtraKey].(bool)
 	return active && !unsupported
+}
+
+// openAIForcedNonStreamRequestKey marks an upstream request whose body was
+// rewritten from stream=true to stream=false by the forced non-stream rule.
+type openAIForcedNonStreamRequestKey struct{}
+
+// openAIGinContextKey carries the gin.Context inside the upstream request
+// context so deep service layers can mark request-scoped flags back onto it.
+type openAIGinContextKey struct{}
+
+// WithOpenAIGinContext stores the gin context inside the request context.
+func WithOpenAIGinContext(ctx context.Context, c *gin.Context) context.Context {
+	if c == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, openAIGinContextKey{}, c)
+}
+
+// ginContextFromRequest returns the gin context stored by
+// WithOpenAIGinContext, or nil when absent.
+func ginContextFromRequest(ctx context.Context) *gin.Context {
+	if ctx == nil {
+		return nil
+	}
+	c, _ := ctx.Value(openAIGinContextKey{}).(*gin.Context)
+	return c
+}
+
+// markOpenAIForcedNonStream records on the request's gin context that the
+// upstream body was rewritten to stream=false. Handlers read it when building
+// the usage log so the dashboard can show「流式(非流)」.
+func markOpenAIForcedNonStream(ctx context.Context) {
+	if c := ginContextFromRequest(ctx); c != nil {
+		c.Set("openai_forced_non_stream", true)
+	}
+}
+
+// GetOpenAIForcedNonStream reports whether the request's upstream body was
+// rewritten to non-streaming by the forced non-stream rule.
+func GetOpenAIForcedNonStream(c *gin.Context) bool {
+	if c == nil {
+		return false
+	}
+	v, _ := c.Get("openai_forced_non_stream")
+	b, _ := v.(bool)
+	return b
+}
+
+// openAIForcedNonStreamFromRequest reports whether the request that produced
+// this response was rewritten to a non-streaming body.
+func openAIForcedNonStreamFromRequest(resp *http.Response) bool {
+	if resp == nil || resp.Request == nil {
+		return false
+	}
+	v, _ := resp.Request.Context().Value(openAIForcedNonStreamRequestKey{}).(bool)
+	return v
 }
 
 // Counting is a single database update, shared across concurrent requests and instances.
@@ -205,7 +263,9 @@ func (s *OpenAIGatewayService) prepareOpenAIForcedNonStreamRequest(request *http
 	if err != nil {
 		return nil, false, err
 	}
+	markOpenAIForcedNonStream(request.Context())
 	clone := request.Clone(request.Context())
+	clone = clone.WithContext(context.WithValue(clone.Context(), openAIForcedNonStreamRequestKey{}, true))
 	clone.Body = io.NopCloser(bytes.NewReader(body))
 	clone.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(body)), nil }
 	clone.ContentLength = int64(len(body))

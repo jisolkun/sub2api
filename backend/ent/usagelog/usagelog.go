@@ -78,6 +78,8 @@ const (
 	FieldBillingType = "billing_type"
 	// FieldStream holds the string denoting the stream field in the database.
 	FieldStream = "stream"
+	// FieldForcedNonStream holds the string denoting the forced_non_stream field in the database.
+	FieldForcedNonStream = "forced_non_stream"
 	// FieldDurationMs holds the string denoting the duration_ms field in the database.
 	FieldDurationMs = "duration_ms"
 	// FieldFirstTokenMs holds the string denoting the first_token_ms field in the database.
@@ -192,6 +194,7 @@ var Columns = []string{
 	FieldAccountRateMultiplier,
 	FieldBillingType,
 	FieldStream,
+	FieldForcedNonStream,
 	FieldDurationMs,
 	FieldFirstTokenMs,
 	FieldUserAgent,
@@ -268,6 +271,8 @@ var (
 	DefaultBillingType int8
 	// DefaultStream holds the default value on creation for the "stream" field.
 	DefaultStream bool
+	// DefaultForcedNonStream holds the default value on creation for the "forced_non_stream" field.
+	DefaultForcedNonStream bool
 	// UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	UserAgentValidator func(string) error
 	// IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
@@ -458,6 +463,11 @@ func ByBillingType(opts ...sql.OrderTermOption) OrderOption {
 // ByStream orders the results by the stream field.
 func ByStream(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStream, opts...).ToFunc()
+}
+
+// ByForcedNonStream orders the results by the forced_non_stream field.
+func ByForcedNonStream(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldForcedNonStream, opts...).ToFunc()
 }
 
 // ByDurationMs orders the results by the duration_ms field.

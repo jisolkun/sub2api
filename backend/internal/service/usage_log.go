@@ -173,9 +173,12 @@ type UsageLog struct {
 	// AccountStatsCost 账号统计定价预计算费用（nil = 使用默认公式 total_cost × account_rate_multiplier）
 	AccountStatsCost *float64
 
-	BillingType        int8
-	RequestType        RequestType
-	Stream             bool
+	BillingType int8
+	RequestType RequestType
+	Stream      bool
+	// ForcedNonStream 标记该请求的上游 body 被「过载后强制非流式」规则改写为
+	// stream=false（客户端协议保持流式），用于使用记录展示「流式(非流)」。
+	ForcedNonStream    bool
 	OpenAIWSMode       bool
 	NativeCompactionV2 bool
 	DurationMs         *int

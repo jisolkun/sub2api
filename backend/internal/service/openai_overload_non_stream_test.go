@@ -104,7 +104,7 @@ func TestOpenAIOverloadZeroThresholdForcesAllAccounts(t *testing.T) {
 	}{
 		{enabled: true, threshold: "0", expectForced: true},
 		{enabled: true, threshold: "0", extra: map[string]any{OpenAIOverloadCountExtraKey: 7}, expectForced: true},
-		{enabled: true, threshold: "0", extra: map[string]any{OpenAINonStreamUnsupportedExtraKey: true}, expectForced: false},
+		{enabled: true, threshold: "0", extra: map[string]any{OpenAINonStreamUnsupportedExtraKey: true}, expectForced: true},
 		{enabled: false, threshold: "0", expectForced: false},
 		{enabled: true, threshold: "1", extra: map[string]any{OpenAIOverloadCountExtraKey: 7}, expectForced: false},
 	} {

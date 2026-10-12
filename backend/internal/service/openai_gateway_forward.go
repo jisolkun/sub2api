@@ -247,7 +247,12 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 	// HTTP SSE may opt into the native WS pool on ordinary OAuth accounts.
 	wsDecision = s.resolveOpenAIHTTPWSSSEDecision(c, account, body, wsDecision)
 	accelerateHTTPSSE := wsDecision.Reason == openAIOAuthWSSSEAccelerationReason
-	anchorCtx, anchorFinish, anchorErr := s.prepareCodexWSAnchor(ctx, c, account, body)
+	anchorCtx := ctx
+	var anchorFinish func(*OpenAIForwardResult, error)
+	var anchorErr error
+	if !s.forceOpenAINonStream(ctx, account) {
+		anchorCtx, anchorFinish, anchorErr = s.prepareCodexWSAnchor(ctx, c, account, body)
+	}
 	if anchorErr != nil {
 		return nil, anchorErr
 	}
@@ -270,6 +275,10 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		}
 	}
 
+	if s.forceOpenAINonStream(ctx, account) {
+		wsDecision = openAIWSHTTPDecision("overload_forced_non_stream")
+		accelerateHTTPSSE = false
+	}
 	passthroughEnabled := account.IsOpenAIPassthroughEnabled()
 	compactPath := isOpenAIResponsesCompactPath(c)
 	body, err = normalizeOpenAIResponsesNamespaces(c, account, body, wsDecision.Transport, passthroughEnabled, compactPath)
@@ -1226,7 +1235,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 		reasoningEffortValue = *reasoningEffort
 	}
 	firstOutputTimeout := time.Duration(0)
-	if reqStream && account.Platform == PlatformOpenAI {
+	if reqStream && account.Platform == PlatformOpenAI && !s.forceOpenAINonStream(ctx, account) {
 		firstOutputTimeout = s.openAIFirstOutputTimeout(reasoningEffortValue)
 	}
 

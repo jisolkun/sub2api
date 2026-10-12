@@ -132,6 +132,8 @@ type WebSearchManagerBuilder func(cfg *WebSearchEmulationConfig, proxyURLs map[i
 
 // SettingService 系统设置服务
 type SettingService struct {
+	openAIOverloadNonStreamCache       atomic.Value
+	openAIOverloadNonStreamMu          sync.Mutex
 	Serverless                         *serverless.Manager // Initialized before requests start.
 	modelBillingCache                  modelBillingConfigCache
 	prioritySchedulingConfig           priorityConfigCache

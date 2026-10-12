@@ -968,6 +968,9 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		result.OpenAICodexVersionAutoSyncEnabled = true
 	}
 	result.OpenAIRequestTimezoneEnabled = settings[SettingKeyOpenAIRequestTimezoneEnabled] == "true"
+	overloadSettings := parseOpenAIOverloadNonStreamSettings(settings)
+	result.OpenAIOverloadNonStreamEnabled = overloadSettings.Enabled
+	result.OpenAIOverloadNonStreamThreshold = overloadSettings.Threshold
 	if v, ok := settings[SettingKeyOpenAICodexTicketEnabled]; ok && v != "" {
 		result.OpenAICodexTicketEnabled = v == "true"
 	} else if s != nil && s.cfg != nil {

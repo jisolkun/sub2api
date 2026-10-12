@@ -3,9 +3,10 @@ import { flushPromises, mount } from '@vue/test-utils'
 import OpenAIQuotaResetCell from '../OpenAIQuotaResetCell.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import type { Account } from '@/types'
-import { refreshOpenAIQuota, resetOpenAIQuota, type OpenAIQuotaRefreshResult } from '@/api/admin/accounts'
+import { clearForcedNonStream, refreshOpenAIQuota, resetOpenAIQuota, type OpenAIQuotaRefreshResult } from '@/api/admin/accounts'
 
 vi.mock('@/api/admin/accounts', () => ({
+  clearForcedNonStream: vi.fn(),
   refreshOpenAIQuota: vi.fn(),
   resetOpenAIQuota: vi.fn(),
   refreshOpenAIReferrals: vi.fn(),
@@ -470,6 +471,40 @@ describe('OpenAIQuotaResetCell 自动用卡运行态', () => {
     })
     const wrapper = mount(OpenAIQuotaResetCell, { props: { account } })
     expect(wrapper.find('[data-testid="auto-reset-credit-state"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+
+describe('OpenAIQuotaResetCell — overloaded account streaming recovery', () => {
+  it('shows recovery beside query only for affected accounts and refreshes the row', async () => {
+    const account = makeAccount({ extra: { openai_force_non_stream: true, openai_overload_count: 3 } })
+    const recovered = { ...account, extra: { openai_force_non_stream: false, openai_overload_count: 0 } }
+    vi.mocked(clearForcedNonStream).mockResolvedValueOnce(recovered)
+    const wrapper = mount(OpenAIQuotaResetCell, { props: { account } })
+    await wrapper.get('[data-testid="clear-forced-non-stream"]').trigger('click')
+    await flushPromises()
+    expect(clearForcedNonStream).toHaveBeenCalledWith(account.id)
+    expect(wrapper.emitted('account-updated')?.[0]).toEqual([recovered])
+    await wrapper.setProps({ account: recovered })
+    expect(wrapper.find('[data-testid="clear-forced-non-stream"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+  it('marks upstreams that require streaming and allows clearing the capability result', () => {
+    const account = makeAccount({ extra: { openai_force_non_stream: false, openai_non_stream_unsupported: true } })
+    const wrapper = mount(OpenAIQuotaResetCell, { props: { account } })
+    expect(wrapper.get('[data-testid="non-stream-unsupported"]').text()).toContain('admin.accounts.nonStreamUnsupported')
+    expect(wrapper.find('[data-testid="clear-forced-non-stream"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+  it('displays an API error and leaves the account in forced mode', async () => {
+    vi.mocked(clearForcedNonStream).mockRejectedValueOnce(new Error('failed'))
+    const wrapper = mount(OpenAIQuotaResetCell, { props: { account: makeAccount({ extra: { openai_force_non_stream: true } }) } })
+    await wrapper.get('[data-testid="clear-forced-non-stream"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.emitted('account-updated')).toBeUndefined()
+    expect(wrapper.text()).toContain('admin.accounts.clearForcedNonStreamFailed')
+    expect(wrapper.find('[data-testid="clear-forced-non-stream"]').exists()).toBe(true)
     wrapper.unmount()
   })
 })

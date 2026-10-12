@@ -648,7 +648,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 	// a later bridge/ctx_pool account retry.
 	ingressReader := openAIWSGetIngressReader(c, clientConn)
 	ingressReader.setWaitFrameMode(false)
-	forceHTTPBridge := account.Platform == PlatformGrok ||
+	forceHTTPBridge := s.forceOpenAINonStream(ctx, account) || account.Platform == PlatformGrok ||
 		(s.pluginManager != nil && s.pluginManager.ShouldRouteOpenAIOAuth(account))
 	modeRouterV2Enabled := s != nil && s.cfg != nil && s.cfg.Gateway.OpenAIWS.ModeRouterV2Enabled
 	ingressMode := OpenAIWSIngressModeCtxPool
@@ -1654,6 +1654,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 
 	var rejectedFieldRetryState *openAIResponsesRejectedFieldRetryState
 	sendAndRelay := func(turn int, lease *openAIWSConnLease, payload []byte, payloadBytes int, originalModel string, imageBillingModel string, imageSizeTier string, imageInputSize string, requestedReasoningEffort *string) (*OpenAIForwardResult, error) {
+		overloadRecorded := false
 		responseModelObserver := &upstreamResponseModelObserver{}
 		if lease == nil {
 			return nil, errors.New("upstream websocket lease is nil")
@@ -1747,6 +1748,10 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			}
 
 			eventType, eventResponseID, _ := parseOpenAIWSEventEnvelope(upstreamMessage)
+			if !overloadRecorded && isOpenAIOverloadErrorPayload(upstreamMessage) {
+				s.recordOpenAIOverload(ctx, account)
+				overloadRecorded = true
+			}
 			responseModelObserver.ObserveOpenAI(upstreamMessage, eventType)
 			if responseID == "" && eventResponseID != "" {
 				responseID = eventResponseID

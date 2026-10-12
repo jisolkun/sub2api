@@ -55,7 +55,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		observer = beginUpstreamResponseModelObservation(c)
 	}
 	firstOutputTimeout := time.Duration(0)
-	if account != nil && account.Platform == PlatformOpenAI {
+	if account != nil && account.Platform == PlatformOpenAI && !s.forceOpenAINonStream(ctx, account) {
 		firstOutputTimeout = s.openAIFirstOutputTimeout(reasoningEffort)
 	}
 	guardFirstOutput := firstOutputTimeout > 0

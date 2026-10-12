@@ -1435,7 +1435,13 @@ export async function getOpenAIRequestTimezones(): Promise<{ default: string; ti
   return data
 }
 
+export async function clearForcedNonStream(id: number): Promise<Account> {
+  const { data } = await apiClient.post<Account>(`/admin/accounts/${id}/clear-forced-non-stream`)
+  return data
+}
+
 export const accountsAPI = {
+  clearForcedNonStream,
   getOpenAIRequestTimezones,
   list,
   listWithEtag,

@@ -496,6 +496,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.OpenAIRequestTimezoneEnabled != after.OpenAIRequestTimezoneEnabled {
 		changed = append(changed, "openai_request_timezone_enabled")
 	}
+	if before.OpenAIOverloadNonStreamEnabled != after.OpenAIOverloadNonStreamEnabled {
+		changed = append(changed, "openai_overload_non_stream_enabled")
+	}
+	if before.OpenAIOverloadNonStreamThreshold != after.OpenAIOverloadNonStreamThreshold {
+		changed = append(changed, "openai_overload_non_stream_threshold")
+	}
 	if before.OpenAICodexTicketEnabled != after.OpenAICodexTicketEnabled {
 		changed = append(changed, "openai_codex_ticket_enabled")
 	}

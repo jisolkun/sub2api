@@ -12,6 +12,8 @@ func firstNonEmpty(values ...string) string {
 }
 
 type SystemSettings struct {
+	OpenAIOverloadNonStreamEnabled      bool
+	OpenAIOverloadNonStreamThreshold    int
 	OpenAICodexTicketHarvestScope       CodexTicketHarvestScope
 	OpenAICodexTicketStrictResponse     bool
 	OpenAICodexTicketFailClosed         bool

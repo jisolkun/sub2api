@@ -14,6 +14,13 @@ export default {
         payment: 'Payment',
       },
       features: {
+        overloadNonStream: {
+          invalidThreshold: 'Overload count must be an integer between 1 and 1000',
+          title: 'Non-streaming upstream after overload',
+          enabled: 'Enable automatic overload fallback',
+          threshold: 'Overload count per account (1–1000, default 1)',
+          description: 'After an OpenAI account receives Our servers are currently overloaded. Please try again later the configured number of times, upstream requests use non-streaming mode while clients still receive SSE. Output is sent after the upstream completes. Upstreams that explicitly require streaming (such as Codex) automatically return to streaming and are marked unsupported. Turning this switch off pauses the rule. Restore streaming beside the account query button to clear the account flag and counter.',
+        },
         excelBpsImages: {
           mode: 'Image transport',
           modeRelay: 'Temporary HTTPS relay (default)',

@@ -1312,6 +1312,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 		firstTurnStartedAt = hooks.InitialTurnStartedAt
 	}
 	failureAccountSideEffectsApplied := false
+	overloadRecorded := false
 	relayResult, relayExit := openaiwsv2.RunEntry(openaiwsv2.EntryInput{
 		Ctx:                ctx,
 		ClientConn:         policyClientConn,
@@ -1435,6 +1436,11 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 				eventType, _, _ := parseOpenAIWSEventEnvelope(payload)
 				if eventType == "response.created" {
 					failureAccountSideEffectsApplied = false
+					overloadRecorded = false
+				}
+				if !overloadRecorded && isOpenAIOverloadErrorPayload(payload) {
+					s.recordOpenAIOverload(ctx, account)
+					overloadRecorded = true
 				}
 				if (eventType == "error" || eventType == "response.failed") && markOpenAIWSV2PassthroughCyberPolicy(c, payload) {
 					return nil

@@ -7217,6 +7217,18 @@
 
         <!-- Tab: Features (功能开关) -->
         <div v-show="activeTab === 'features'" class="space-y-6">
+          <div class="card" data-testid="openai-overload-non-stream-settings">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('admin.settings.features.overloadNonStream.title') }}</h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.settings.features.overloadNonStream.description') }}</p>
+            <div class="mt-4 flex items-center justify-between gap-4">
+              <label class="input-label">{{ t('admin.settings.features.overloadNonStream.enabled') }}</label>
+              <Toggle v-model="form.openai_overload_non_stream_enabled" />
+            </div>
+            <div class="mt-4">
+              <label for="openai-overload-threshold" class="input-label">{{ t('admin.settings.features.overloadNonStream.threshold') }}</label>
+              <input id="openai-overload-threshold" v-model.number="form.openai_overload_non_stream_threshold" type="number" min="1" max="1000" step="1" class="input" />
+            </div>
+          </div>
         <div class="card" data-testid="protocol-feature-switches">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">协议功能</h2>
@@ -10378,6 +10390,8 @@ const form = reactive<SettingsForm>({
   openai_codex_client_version: "",
   // 只读展示：自动同步任务写入的官方最新稳定版，不参与提交（提交载荷按字段显式构造）
   openai_codex_client_version_synced: "",
+  openai_overload_non_stream_enabled: false,
+  openai_overload_non_stream_threshold: 1,
   openai_codex_version_auto_sync_enabled: true,
   openai_request_timezone_enabled: false,
   claude_code_client_version: "",
@@ -11698,6 +11712,10 @@ const siteBillingModeHint = computed(() =>
 );
 
 async function saveSettings() {
+  if (!Number.isInteger(form.openai_overload_non_stream_threshold) || form.openai_overload_non_stream_threshold < 1 || form.openai_overload_non_stream_threshold > 1000) {
+    appStore.showError(t('admin.settings.features.overloadNonStream.invalidThreshold'));
+    return;
+  }
   saving.value = true;
   try {
     const imageBaseUrl = form.excel_bps_image_base_url.trim();
@@ -12105,6 +12123,8 @@ async function saveSettings() {
         form.openai_codex_user_agent?.trim() || "",
       openai_codex_client_version:
         form.openai_codex_client_version?.trim() || "",
+      openai_overload_non_stream_enabled: form.openai_overload_non_stream_enabled,
+      openai_overload_non_stream_threshold: form.openai_overload_non_stream_threshold,
       openai_codex_version_auto_sync_enabled:
         form.openai_codex_version_auto_sync_enabled,
       openai_request_timezone_enabled: form.openai_request_timezone_enabled,

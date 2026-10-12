@@ -13,6 +13,16 @@
     -->
     <div class="flex flex-wrap items-center gap-1.5">
       <slot name="pre-actions" />
+      <span v-if="account.extra?.openai_non_stream_unsupported === true" class="text-[10px] text-gray-500" data-testid="non-stream-unsupported">{{ t('admin.accounts.nonStreamUnsupported') }}</span>
+      <button
+        v-if="(account.extra?.openai_force_non_stream === true || account.extra?.openai_non_stream_unsupported === true)"
+        type="button"
+        data-testid="clear-forced-non-stream"
+        class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-50 disabled:opacity-50 dark:text-amber-400"
+        :disabled="clearingNonStream"
+        :title="t('admin.accounts.clearForcedNonStreamHint')"
+        @click="handleClearNonStream"
+      >{{ t('admin.accounts.clearForcedNonStream') }}</button>
 
       <button
         type="button"
@@ -185,6 +195,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Account } from '@/types'
 import {
+  clearForcedNonStream,
   refreshOpenAIQuota,
   resetOpenAIQuota,
   type OpenAIQuotaUsage,
@@ -205,6 +216,21 @@ const { t } = useI18n()
 
 // Visible only for OpenAI OAuth accounts.
 const visible = computed(() => props.account.platform === 'openai' && props.account.type === 'oauth')
+
+const clearingNonStream = ref(false)
+const handleClearNonStream = async () => {
+  if (clearingNonStream.value) return
+  clearingNonStream.value = true
+  error.value = null
+  try {
+    const account = await clearForcedNonStream(props.account.id)
+    emit('account-updated', account)
+  } catch {
+    error.value = t('admin.accounts.clearForcedNonStreamFailed')
+  } finally {
+    clearingNonStream.value = false
+  }
+}
 
 const loading = ref(false)
 const resetting = ref(false)

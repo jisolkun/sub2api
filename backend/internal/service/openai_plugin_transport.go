@@ -9,6 +9,30 @@ func (s *OpenAIGatewayService) SetPluginManager(manager *PluginManager) {
 // doOpenAIUpstream 只在 OpenAI OAuth 能力绑定已启用时把真实请求交给插件。
 // 插件返回标准 http.Response，响应解析、错误映射、SSE 和计费仍由现有核心链处理。
 func (s *OpenAIGatewayService) doOpenAIUpstream(request *http.Request, proxyURL string, account *Account) (result *http.Response, resultErr error) {
+	prepared, bridgeSSE, err := s.prepareOpenAIForcedNonStreamRequest(request, account)
+	if err != nil {
+		return nil, err
+	}
+	forcedNonStream := prepared != request
+	request = prepared
+	defer func() {
+		if resultErr != nil || result == nil || result.Body == nil {
+			return
+		}
+		if s.settingService != nil && account != nil && account.Platform == PlatformOpenAI && s.settingService.GetOpenAIOverloadNonStreamSettings(request.Context()).Enabled {
+			result.Body = &openAIOverloadObservingBody{ReadCloser: result.Body, onOverload: func() { s.recordOpenAIOverload(request.Context(), account) }}
+		}
+		if bridgeSSE && result.StatusCode >= 200 && result.StatusCode < 300 {
+			result.Body = &openAIForcedNonStreamBody{ReadCloser: result.Body, s: s}
+			result.Header = result.Header.Clone()
+			if result.Header == nil {
+				result.Header = make(http.Header)
+			}
+			result.Header.Set("Content-Type", "text/event-stream")
+			result.Header.Del("Content-Length")
+			result.ContentLength = -1
+		}
+	}()
 	request = s.stickBoundCodexTicketRequest(request, account)
 	boundTicket := s.codexTicketRequestBound(request, account)
 	releaseChat := func() {}
@@ -49,7 +73,11 @@ func (s *OpenAIGatewayService) doOpenAIUpstream(request *http.Request, proxyURL 
 	}()
 	// Keep ticket observation/strict validation around the final response,
 	// while every egress attempt retains its own plugin routing and trace.
-	return s.doUpstreamWithProxyFallback(request.Context(), request, account, proxyURL)
+	result, resultErr = s.doUpstreamWithProxyFallback(request.Context(), request, account, proxyURL)
+	if forcedNonStream && resultErr == nil && result != nil && result.StatusCode == http.StatusBadRequest {
+		result, resultErr = s.retryUnsupportedOpenAINonStream(request, proxyURL, account, result)
+	}
+	return result, resultErr
 }
 
 // doOpenAIAccountTestUpstream 让 OpenAI OAuth 账号测试与真实转发使用同一插件路径。

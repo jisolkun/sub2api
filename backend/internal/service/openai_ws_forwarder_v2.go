@@ -35,6 +35,7 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 	lastFailureReason string,
 	agentTaskRecoveryTried *bool,
 ) (*OpenAIForwardResult, error) {
+	overloadRecorded := false
 	if anchor := codexWSAnchorFromContext(ctx); anchor != nil {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithDeadline(ctx, anchor.expires)
@@ -836,6 +837,10 @@ readLoop:
 		imageCounter.AddSSEData(message)
 
 		if eventType == "error" || eventType == "response.failed" {
+			if !overloadRecorded && isOpenAIOverloadErrorPayload(message) {
+				s.recordOpenAIOverload(ctx, account)
+				overloadRecorded = true
+			}
 			markOpenAICyberPolicyEvent(c, message, http.StatusOK, usage)
 		}
 

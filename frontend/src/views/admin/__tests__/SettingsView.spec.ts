@@ -753,6 +753,32 @@ describe("admin SettingsView payment visible method controls", () => {
     adminSettingsFetch.mockResolvedValue(undefined);
   });
 
+  it("loads and saves the overload non-stream toggle and threshold", async () => {
+    getSettings.mockResolvedValueOnce({ ...baseSettingsResponse, openai_overload_non_stream_enabled: true, openai_overload_non_stream_threshold: 3 });
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.get('#settings-tab-features').trigger('click');
+    const section = wrapper.get('[data-testid="openai-overload-non-stream-settings"]');
+    expect((section.get('input[type="checkbox"]').element as HTMLInputElement).checked).toBe(true);
+    expect((section.get('#openai-overload-threshold').element as HTMLInputElement).value).toBe('3');
+    await section.get('input[type="checkbox"]').setValue(false);
+    await section.get('#openai-overload-threshold').setValue('5');
+    await wrapper.get('form').trigger('submit.prevent');
+    await flushPromises();
+    expect(updateSettings.mock.calls.at(-1)?.[0]).toMatchObject({ openai_overload_non_stream_enabled: false, openai_overload_non_stream_threshold: 5 });
+  });
+
+  it("rejects an empty or fractional overload threshold before saving", async () => {
+    const wrapper = mountView();
+    await flushPromises();
+    for (const value of ['', '1.5', '0', '1001']) {
+      await wrapper.get('#openai-overload-threshold').setValue(value);
+      await wrapper.get('form').trigger('submit.prevent');
+      await flushPromises();
+      expect(updateSettings).not.toHaveBeenCalled();
+    }
+  });
+
   it("opens the risk settings from a deep link after loading without changing switches", async () => {
     settingsRoute.query = { tab: 'features' };
     settingsRoute.hash = '#settings-section-features-risk-control';

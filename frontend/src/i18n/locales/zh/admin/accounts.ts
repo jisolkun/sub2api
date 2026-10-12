@@ -1942,6 +1942,10 @@ export default {
       videoPreview: '生成视频：',
       videoReceived: '已收到第 {count} 段测试视频',
       // Stats Modal
+      nonStreamUnsupported: '上游仅支持流式',
+      clearForcedNonStream: '关闭非流',
+      clearForcedNonStreamHint: '解除此账号的强制非流式并清零过载计数；后续达到阈值可再次触发',
+      clearForcedNonStreamFailed: '解除强制非流式失败',
       viewStats: '查看统计',
       usageStatistics: '使用统计',
       last30DaysUsage: '近30天使用统计（日均基于实际使用天数）',

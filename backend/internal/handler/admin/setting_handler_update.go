@@ -268,6 +268,8 @@ type UpdateSettingsRequest struct {
 	OpenAICodexClientVersion               *string   `json:"openai_codex_client_version"`
 	OpenAICodexVersionAutoSyncEnabled      *bool     `json:"openai_codex_version_auto_sync_enabled"`
 	OpenAIRequestTimezoneEnabled           *bool     `json:"openai_request_timezone_enabled"`
+	OpenAIOverloadNonStreamEnabled         *bool     `json:"openai_overload_non_stream_enabled"`
+	OpenAIOverloadNonStreamThreshold       *int      `json:"openai_overload_non_stream_threshold"`
 	OpenAICodexTicketEnabled               *bool     `json:"openai_codex_ticket_enabled"`
 	OpenAICodexTicketHarvestProxyURL       string    `json:"openai_codex_ticket_harvest_proxy_url"`
 	OpenAICodexTicketUseSavedStaticProxy   bool      `json:"openai_codex_ticket_use_saved_static_proxy"`
@@ -543,6 +545,10 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 	var req UpdateSettingsRequest
 	if err := c.ShouldBindBodyWith(&req, binding.JSON); err != nil {
 		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+	if req.OpenAIOverloadNonStreamThreshold != nil && (*req.OpenAIOverloadNonStreamThreshold < 1 || *req.OpenAIOverloadNonStreamThreshold > 1000) {
+		response.BadRequest(c, "overload non-stream threshold must be between 1 and 1000")
 		return
 	}
 	if req.OpenAICodexTicketHarvestScope != nil && req.OpenAICodexTicketHarvestScope.Mode == "" {
@@ -2029,6 +2035,18 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.OpenAIRequestTimezoneEnabled
 		}(),
+		OpenAIOverloadNonStreamEnabled: func() bool {
+			if req.OpenAIOverloadNonStreamEnabled != nil {
+				return *req.OpenAIOverloadNonStreamEnabled
+			}
+			return previousSettings.OpenAIOverloadNonStreamEnabled
+		}(),
+		OpenAIOverloadNonStreamThreshold: func() int {
+			if req.OpenAIOverloadNonStreamThreshold != nil {
+				return *req.OpenAIOverloadNonStreamThreshold
+			}
+			return previousSettings.OpenAIOverloadNonStreamThreshold
+		}(),
 		OpenAICodexTicketEnabled: func() bool {
 			if req.OpenAICodexTicketEnabled != nil {
 				return *req.OpenAICodexTicketEnabled
@@ -2693,6 +2711,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		OpenAICodexClientVersionSynced:                         updatedSettings.OpenAICodexClientVersionSynced,
 		OpenAICodexVersionAutoSyncEnabled:                      updatedSettings.OpenAICodexVersionAutoSyncEnabled,
 		OpenAIRequestTimezoneEnabled:                           updatedSettings.OpenAIRequestTimezoneEnabled,
+		OpenAIOverloadNonStreamEnabled:                         updatedSettings.OpenAIOverloadNonStreamEnabled,
+		OpenAIOverloadNonStreamThreshold:                       updatedSettings.OpenAIOverloadNonStreamThreshold,
 		OpenAICodexTicketEnabled:                               updatedSettings.OpenAICodexTicketEnabled,
 		OpenAICodexTicketHarvestProxyURL:                       service.MaskProxyURL(updatedSettings.OpenAICodexTicketHarvestProxyURL),
 		OpenAICodexTicketStaticProxyURL:                        service.MaskProxyURL(updatedSettings.OpenAICodexTicketStaticProxyURL),

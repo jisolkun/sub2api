@@ -1855,6 +1855,10 @@ export default {
       videoPreview: 'Generated video:',
       videoReceived: 'Received test video #{count}',
       // Stats Modal
+      nonStreamUnsupported: 'Upstream requires streaming',
+      clearForcedNonStream: 'Restore streaming',
+      clearForcedNonStreamHint: 'Clear forced non-streaming and reset the overload counter; reaching the threshold again can reactivate it',
+      clearForcedNonStreamFailed: 'Failed to restore streaming',
       viewStats: 'View Stats',
       usageStatistics: 'Usage Statistics',
       last30DaysUsage: 'Last 30 days usage statistics (based on actual usage days)',

@@ -2130,7 +2130,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthroughWithImage(
 		if len(reasoningEfforts) > 0 {
 			effort = reasoningEfforts[0]
 		}
-		if timeout := s.openAIFirstOutputTimeout(effort); timeout > 0 {
+		if timeout := s.openAIFirstOutputTimeout(effort); timeout > 0 && !s.forceOpenAINonStream(ctx, account) {
 			documentScanner.firstOutputDeadline = startTime.Add(timeout)
 		}
 	}

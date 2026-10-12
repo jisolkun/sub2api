@@ -16,6 +16,7 @@ type SystemSettings struct {
 	OpenAIOverloadNonStreamThreshold    int
 	OpenAICodexTicketHarvestScope       CodexTicketHarvestScope
 	OpenAICodexTicketStrictResponse     bool
+	OpenAICodexTicketCandyObservation   bool
 	OpenAICodexTicketFailClosed         bool
 	OpenAICodexTicketStrategy           string
 	RegistrationEnabled                 bool

@@ -112,3 +112,57 @@ func TestAstraSchedulingLogReasonsAndRedaction(t *testing.T) {
 	settings.CookiePool.Enabled = false
 	require.Equal(t, "cookie_pool_disabled", fields(false)["reason"])
 }
+
+func (r *astraSchedulingRepo) ListByPlatform(_ context.Context, _ string) ([]Account, error) {
+	var accounts []Account
+	for _, a := range r.accounts {
+		accounts = append(accounts, *a)
+	}
+	return accounts, nil
+}
+func TestTicketPoolSchedulingSelfAndReuseWithoutCookiePool(t *testing.T) {
+	for _, mode := range []string{"account", "model", "groups"} {
+		for _, acquisition := range []string{"self", "reuse"} {
+			t.Run(mode+"/"+acquisition, func(t *testing.T) {
+				gateway, _, seed := unifiedAstraFixture(t)
+				settings := config.AstraRoutingSettings{TicketPoolScheduling: true, SchedulingMode: mode, SchedulingGroupIDs: []int64{9}, Revision: "pool"}
+				gateway.cfg.SetAstraRoutingLoader(func(context.Context) config.AstraRoutingSettings { return settings })
+				a := ticketTestAccount(1)
+				a.Status = StatusActive
+				a.Schedulable = true
+				repo := &poolSchedulingTestRepo{astraSchedulingRepo: astraSchedulingRepo{accounts: map[int64]*Account{1: a}}}
+				gateway.accountRepo = repo
+				ticket := *seed
+				ticket.Acquisition = acquisition
+				ticket.Identity = ticketIdentity(a)
+				gateway.openaiCodexTickets.Store(openAICodexTicketKey(1, "gpt-6-astra"), &ticket)
+				svc := &AccountTestService{cfg: gateway.cfg, accountRepo: repo, openaiGatewayService: gateway}
+				svc.syncAstraAccountScheduling(t.Context())
+				require.Equal(t, []bool{true}, repo.ready)
+				require.NoError(t, gateway.checkAstraSchedulingRoute(t.Context(), a))
+				ticket.ExpiresAt = time.Now().Add(-time.Second)
+				gateway.openaiCodexTickets.Store(openAICodexTicketKey(1, "gpt-6-astra"), &ticket)
+				svc.syncAstraAccountScheduling(t.Context())
+				require.Equal(t, []bool{true, false}, repo.ready)
+				require.NoError(t, gateway.checkAstraSchedulingRoute(t.Context(), a), "expired tickets must not synthesize a route 503")
+				settings.TicketPoolScheduling = false
+				svc.syncAstraAccountScheduling(t.Context())
+				require.Len(t, repo.ready, 2, "disabling ticket scheduling preserves account state")
+				settings.TicketPoolScheduling = true
+				a.Extra = map[string]any{OpenAICodexSkipHarvestExtraKey: true}
+				svc.syncAstraAccountScheduling(t.Context())
+				require.Len(t, repo.ready, 2, "manual skip-harvest remains outside pool control")
+			})
+		}
+	}
+}
+
+type poolSchedulingTestRepo struct {
+	astraSchedulingRepo
+	ready []bool
+}
+
+func (r *poolSchedulingTestRepo) ApplyAstraScheduling(_ context.Context, _ int64, settings config.AstraRoutingSettings, ready bool) (AstraSchedulingActionResult, error) {
+	r.ready = append(r.ready, ready)
+	return AstraSchedulingActionResult{Changed: true, Allowed: ready, Action: settings.EffectiveSchedulingMode()}, nil
+}

@@ -12,6 +12,8 @@ vi.mock('@/api/admin/codexHarvest', () => ({
   getCodexHarvestNodes: api.getNodes,
   resetCodexHarvestNodes: api.reset
 }))
+vi.mock('@/components/admin/HarvestGatewayBorrowPanel.vue', () => ({ default: { template: '<section />' } }))
+vi.mock('@/components/admin/HarvestManualConsole.vue', () => ({ default: { template: '<section />' } }))
 vi.mock('@/stores', () => ({ useAppStore: () => toast }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key, te: () => false }) }))
 

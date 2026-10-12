@@ -17,6 +17,7 @@ export default {
     groupsRemoved: '已移出分组',
     chooseSchedulingGroups: '请选择至少一个分组',
     accountScheduling: '号池调度',
+    ticketPoolSchedulingHint: '对自动打票范围内的账号生效，普通打票和快速复用共用同一门票库。有有效票据时加入勾选分组或恢复状态，无有效票据时移出分组或禁用；模型模式只判断 Astra 票据。其他分组不变，人工修改不覆盖。每秒同步，不额外发起探测。关闭后停止接管并保留当前状态。',
     accountSchedulingHint: '路由探针仅用于观测。失败、冷却、未验证和路由过期均不影响生产请求，也不修改账号、模型或分组调度。没有可用借用路由时，按账号原配置转发。',
     nodeCooldown: "失败节点 / host 冷却",
     nodeCooldownHint: "默认 3600 秒是避让策略，不是已测得的上游缓存寿命。同一目标在冷却期内跳过失败节点及已知指向该 host 的节点；保存配置不会清除冷却，进程重启会清除。全部冷却时停止测试，不自动退回直连。",
